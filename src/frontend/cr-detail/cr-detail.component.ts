@@ -5,6 +5,7 @@ import { SessionService } from '../../session/session.service';
 import { CrDetailView, CrTimelineItem } from '../../integration/cr-api.types';
 import { idle, loading, ViewState } from '../view-state';
 import { canApprovePolicy } from '../permissions';
+import { CrApiError } from '../../integration/cr-api.types';
 
 /**
  * Change Request DETAIL page: loads a CR via the API client and renders its status, totals, timeline,
@@ -38,8 +39,12 @@ export class CrDetailComponent implements OnInit {
 			const detail = await this.client.get(this.session.user, this.id);
 			this.state = { status: 'loaded', data: detail };
 		} catch (err) {
-			this.state = { status: 'error', data: null, error: (err as Error).message };
+			this.state = { status: 'error', data: null, error: this.errorMessage(err) };
 		}
+	}
+
+	private errorMessage(err: unknown): string {
+		return err instanceof CrApiError ? err.message : 'Something went wrong. Please try again.';
 	}
 
 	get detail(): CrDetailView | null {
@@ -65,13 +70,39 @@ export class CrDetailComponent implements OnInit {
 	}
 
 	async approve(): Promise<void> {
-		// TODO: perform the approve action through the client and reflect the outcome in the view.
-		throw new Error('approve() not implemented');
+		if (!this.canApprove || this.submitting) return;
+
+		this.submitting = true;
+		this.actionError = undefined;
+		try {
+			const detail = await this.client.approve(this.session.user, this.id, new Date().toISOString());
+			this.state = { status: 'loaded', data: detail };
+		} catch (err) {
+			this.actionError = this.errorMessage(err);
+		} finally {
+			this.submitting = false;
+		}
 	}
 
 	async reject(): Promise<void> {
-		// TODO: require a reason, then perform the reject action through the client and reflect the
-		//       outcome in the view.
-		throw new Error('reject() not implemented');
+		if (!this.canReject || this.submitting) return;
+
+		const reason = this.rejectReason.trim();
+		if (!reason) {
+			this.actionError = 'Enter a reason before rejecting this change request.';
+			return;
+		}
+
+		this.submitting = true;
+		this.actionError = undefined;
+		try {
+			const detail = await this.client.reject(this.session.user, this.id, new Date().toISOString(), reason);
+			this.state = { status: 'loaded', data: detail };
+			this.rejectReason = '';
+		} catch (err) {
+			this.actionError = this.errorMessage(err);
+		} finally {
+			this.submitting = false;
+		}
 	}
 }
