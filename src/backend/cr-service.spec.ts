@@ -55,6 +55,16 @@ describe('CrService approval actions', () => {
 		expectBusinessError(() => service.reject(users.mona, 'CR-2', T, '   '), 'VALIDATION');
 		expect(service.get(users.mona, 'CR-2')).toEqual(before);
 	});
+
+	it('treats a repeated rejection as an idempotent no-op', () => {
+		const { service, users } = buildApp();
+		const rejected = service.reject(users.mona, 'CR-2', T, 'Pricing is not acceptable');
+		const beforeRepeat = clone(rejected);
+
+		const repeated = service.reject(users.mona, 'CR-2', '2026-03-05T11:00:00.000Z');
+
+		expect(repeated).toEqual(beforeRepeat);
+	});
 });
 
 describe('CrService apply', () => {
