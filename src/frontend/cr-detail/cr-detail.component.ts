@@ -4,6 +4,7 @@ import { CrApiClient } from '../../integration/cr-api-client';
 import { SessionService } from '../../session/session.service';
 import { ChangeRequest, TimelineEntry } from '../../backend/cr.types';
 import { idle, loading, ViewState } from '../view-state';
+import { canApprovePolicy } from '../permissions';
 
 /**
  * Change Request DETAIL page: loads a CR via the API client and renders its status, totals, timeline,
@@ -56,12 +57,11 @@ export class CrDetailComponent implements OnInit {
 
 	/** Whether the current user may approve the loaded CR. */
 	get canApprove(): boolean {
-		// NOTE: this only looks at status. The UI must also respect the user's permissions.
-		return this.detail?.status === 'PENDING_APPROVAL';
+		return this.detail?.status === 'PENDING_APPROVAL' && canApprovePolicy(this.session.user);
 	}
 
 	get canReject(): boolean {
-		return this.detail?.status === 'PENDING_APPROVAL';
+		return this.detail?.status === 'PENDING_APPROVAL' && canApprovePolicy(this.session.user);
 	}
 
 	async approve(): Promise<void> {
