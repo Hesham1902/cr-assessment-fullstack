@@ -22,7 +22,14 @@ export const agreements: PurchaseAgreement[] = [
 		],
 		total: 8000,
 	},
-	{ id: 'AGR-9', orgCode: 'org-beta', currency: 'USD', budgetId: 'BUD-9', lineItems: [{ sku: 'SKU-Z', description: 'Z', quantity: 5, unitPrice: 200 }], total: 1000 },
+	{
+		id: 'AGR-9',
+		orgCode: 'org-beta',
+		currency: 'USD',
+		budgetId: 'BUD-9',
+		lineItems: [{ sku: 'SKU-Z', description: 'Z', quantity: 5, unitPrice: 200 }],
+		total: 1000,
+	},
 ];
 
 export const budgets: Budget[] = [
@@ -37,10 +44,58 @@ const proposedPlusOne = [
 ];
 
 export const changeRequests: ChangeRequest[] = [
-	{ id: 'CR-1', orgCode: 'org-alpha', agreementId: 'AGR-1', createdBy: 'alice', title: 'Add 1 unit of SKU-A', status: CrStatus.DRAFT, draftChanges: { lineItems: proposedPlusOne }, totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 }, approvals: [], version: 1, audit: [] },
-	{ id: 'CR-2', orgCode: 'org-alpha', agreementId: 'AGR-1', createdBy: 'alice', title: 'Add 1 unit of SKU-A', status: CrStatus.PENDING_APPROVAL, draftChanges: { lineItems: proposedPlusOne }, totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 }, approvals: [], version: 1, audit: [{ action: 'SUBMIT', byUserId: 'alice', at: '2026-03-01T09:00:00.000Z' }] },
-	{ id: 'CR-APPLIED', orgCode: 'org-alpha', agreementId: 'AGR-1', createdBy: 'alice', title: 'Already applied', status: CrStatus.APPLIED, draftChanges: {}, totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 }, approvals: [], version: 3, audit: [] },
-	{ id: 'CR-BETA', orgCode: 'org-beta', agreementId: 'AGR-9', createdBy: 'bob', title: 'Beta change', status: CrStatus.PENDING_APPROVAL, draftChanges: {}, totals: { baselineTotal: 1000, newTotal: 1200, delta: 200 }, approvals: [], version: 1, audit: [] },
+	{
+		id: 'CR-1',
+		orgCode: 'org-alpha',
+		agreementId: 'AGR-1',
+		createdBy: 'alice',
+		title: 'Add 1 unit of SKU-A',
+		status: CrStatus.DRAFT,
+		draftChanges: { lineItems: proposedPlusOne },
+		totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 },
+		approvals: [],
+		version: 1,
+		audit: [],
+	},
+	{
+		id: 'CR-2',
+		orgCode: 'org-alpha',
+		agreementId: 'AGR-1',
+		createdBy: 'alice',
+		title: 'Add 1 unit of SKU-A',
+		status: CrStatus.PENDING_APPROVAL,
+		draftChanges: { lineItems: proposedPlusOne },
+		totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 },
+		approvals: [],
+		version: 1,
+		audit: [{ action: 'SUBMIT', byUserId: 'alice', at: '2026-03-01T09:00:00.000Z' }],
+	},
+	{
+		id: 'CR-APPLIED',
+		orgCode: 'org-alpha',
+		agreementId: 'AGR-1',
+		createdBy: 'alice',
+		title: 'Already applied',
+		status: CrStatus.APPLIED,
+		draftChanges: {},
+		totals: { baselineTotal: 8000, newTotal: 8500, delta: 500 },
+		approvals: [],
+		version: 3,
+		audit: [],
+	},
+	{
+		id: 'CR-BETA',
+		orgCode: 'org-beta',
+		agreementId: 'AGR-9',
+		createdBy: 'bob',
+		title: 'Beta change',
+		status: CrStatus.PENDING_APPROVAL,
+		draftChanges: {},
+		totals: { baselineTotal: 1000, newTotal: 1200, delta: 200 },
+		approvals: [],
+		version: 1,
+		audit: [],
+	},
 ];
 
 export function buildSeed() {

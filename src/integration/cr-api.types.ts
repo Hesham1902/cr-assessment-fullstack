@@ -1,12 +1,4 @@
-export type CrViewStatus =
-	| 'DRAFT'
-	| 'SUBMITTED'
-	| 'PENDING_APPROVAL'
-	| 'APPROVED'
-	| 'APPLIED'
-	| 'RETURNED'
-	| 'REJECTED'
-	| 'CANCELLED';
+export type CrViewStatus = 'DRAFT' | 'SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'APPLIED' | 'RETURNED' | 'REJECTED' | 'CANCELLED';
 
 export interface CrActor {
 	id: string;
@@ -45,11 +37,7 @@ export type CrApiErrorCode =
 export class CrApiError extends Error {
 	readonly name = 'CrApiError';
 
-	constructor(
-		readonly code: CrApiErrorCode,
-		message: string,
-		readonly retryable: boolean,
-	) {
+	constructor(readonly code: CrApiErrorCode, message: string, readonly retryable: boolean) {
 		super(message);
 	}
 }
