@@ -2,7 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CrApiClient } from '../../integration/cr-api-client';
 import { SessionService } from '../../session/session.service';
-import { ChangeRequest } from '../../backend/cr.types';
+import { CrListItem } from '../../integration/cr-api.types';
 import { idle, loading, ViewState } from '../view-state';
 
 /**
@@ -17,7 +17,7 @@ import { idle, loading, ViewState } from '../view-state';
 })
 export class CrListComponent implements OnInit {
 	@Output() select = new EventEmitter<string>();
-	state: ViewState<ChangeRequest[]> = idle();
+	state: ViewState<CrListItem[]> = idle();
 
 	constructor(private readonly client: CrApiClient, private readonly session: SessionService) {}
 
@@ -35,7 +35,7 @@ export class CrListComponent implements OnInit {
 		}
 	}
 
-	get rows(): ChangeRequest[] {
+	get rows(): CrListItem[] {
 		return this.state.data ?? [];
 	}
 }

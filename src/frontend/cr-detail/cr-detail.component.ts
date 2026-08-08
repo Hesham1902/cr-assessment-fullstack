@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CrApiClient } from '../../integration/cr-api-client';
 import { SessionService } from '../../session/session.service';
-import { ChangeRequest, TimelineEntry } from '../../backend/cr.types';
+import { CrDetailView, CrTimelineItem } from '../../integration/cr-api.types';
 import { idle, loading, ViewState } from '../view-state';
 import { canApprovePolicy } from '../permissions';
 
@@ -20,7 +20,7 @@ import { canApprovePolicy } from '../permissions';
 export class CrDetailComponent implements OnInit {
 	@Input() id!: string;
 
-	state: ViewState<ChangeRequest> = idle();
+	state: ViewState<CrDetailView> = idle();
 	submitting = false;
 	actionError?: string;
 	rejectReason = '';
@@ -42,13 +42,13 @@ export class CrDetailComponent implements OnInit {
 		}
 	}
 
-	get detail(): ChangeRequest | null {
+	get detail(): CrDetailView | null {
 		return this.state.data;
 	}
 
 	/** Approval history for display (read-only). */
-	get timeline(): TimelineEntry[] {
-		return this.detail?.audit ?? [];
+	get timeline(): CrTimelineItem[] {
+		return this.detail?.timeline ?? [];
 	}
 
 	onReasonInput(value: string): void {
