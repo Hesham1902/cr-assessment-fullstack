@@ -42,7 +42,7 @@ describe('CrService approval actions', () => {
 		expectBusinessError(() => service.approve(users.mona, 'CR-1', T), 'ILLEGAL_TRANSITION');
 	});
 
-	it('does not expose another organization\'s request', () => {
+	it("does not expose another organization's request", () => {
 		const { service, users } = buildApp();
 
 		expectBusinessError(() => service.approve(users.bob, 'CR-2', T), 'NOT_FOUND');
