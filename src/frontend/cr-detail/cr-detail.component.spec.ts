@@ -122,6 +122,29 @@ describe('CrDetailComponent', () => {
 		expect(fixture.nativeElement.querySelector('.cr-status').textContent).toContain('APPROVED');
 	});
 
+	it('prevents duplicate approval submissions', async () => {
+		const { fixture, client } = await render(demoActors.mona, 'CR-2');
+		client.latencyMs = 20;
+		const approve = jest.spyOn(client, 'approve');
+
+		void fixture.componentInstance.approve();
+		void fixture.componentInstance.approve();
+
+		expect(approve).toHaveBeenCalledTimes(1);
+		await flush(25);
+	});
+
+	it('validates the rejection reason inside the component method', async () => {
+		const { fixture } = await render(demoActors.mona, 'CR-2');
+		fixture.componentInstance.rejectReason = '   ';
+
+		await fixture.componentInstance.reject();
+		fixture.detectChanges();
+
+		expect(fixture.nativeElement.querySelector('.cr-actions__error').textContent).toContain('Enter a reason');
+		expect(fixture.nativeElement.querySelector('.cr-status').textContent).toContain('PENDING_APPROVAL');
+	});
+
 	it('preserves the loaded CR and surfaces an action failure', async () => {
 		const { fixture, client } = await render(demoActors.mona, 'CR-2');
 		client.failNext = true;
