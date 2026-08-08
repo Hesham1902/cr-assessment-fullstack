@@ -2,8 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CrApiClient } from '../../integration/cr-api-client';
 import { SessionService } from '../../session/session.service';
-import { ChangeRequest, TimelineEntry } from '../../backend/cr.types';
+import { CrDetailView, CrTimelineItem } from '../../integration/cr-api.types';
 import { idle, loading, ViewState } from '../view-state';
+import { canApprovePolicy } from '../permissions';
+import { CrApiError } from '../../integration/cr-api.types';
 
 /**
  * Change Request DETAIL page: loads a CR via the API client and renders its status, totals, timeline,
@@ -19,7 +21,7 @@ import { idle, loading, ViewState } from '../view-state';
 export class CrDetailComponent implements OnInit {
 	@Input() id!: string;
 
-	state: ViewState<ChangeRequest> = idle();
+	state: ViewState<CrDetailView> = idle();
 	submitting = false;
 	actionError?: string;
 	rejectReason = '';
@@ -37,17 +39,21 @@ export class CrDetailComponent implements OnInit {
 			const detail = await this.client.get(this.session.user, this.id);
 			this.state = { status: 'loaded', data: detail };
 		} catch (err) {
-			this.state = { status: 'error', data: null, error: (err as Error).message };
+			this.state = { status: 'error', data: null, error: this.errorMessage(err) };
 		}
 	}
 
-	get detail(): ChangeRequest | null {
+	private errorMessage(err: unknown): string {
+		return err instanceof CrApiError ? err.message : 'Something went wrong. Please try again.';
+	}
+
+	get detail(): CrDetailView | null {
 		return this.state.data;
 	}
 
 	/** Approval history for display (read-only). */
-	get timeline(): TimelineEntry[] {
-		return this.detail?.audit ?? [];
+	get timeline(): CrTimelineItem[] {
+		return this.detail?.timeline ?? [];
 	}
 
 	onReasonInput(value: string): void {
@@ -56,22 +62,47 @@ export class CrDetailComponent implements OnInit {
 
 	/** Whether the current user may approve the loaded CR. */
 	get canApprove(): boolean {
-		// NOTE: this only looks at status. The UI must also respect the user's permissions.
-		return this.detail?.status === 'PENDING_APPROVAL';
+		return this.detail?.status === 'PENDING_APPROVAL' && canApprovePolicy(this.session.user);
 	}
 
 	get canReject(): boolean {
-		return this.detail?.status === 'PENDING_APPROVAL';
+		return this.detail?.status === 'PENDING_APPROVAL' && canApprovePolicy(this.session.user);
 	}
 
 	async approve(): Promise<void> {
-		// TODO: perform the approve action through the client and reflect the outcome in the view.
-		throw new Error('approve() not implemented');
+		if (!this.canApprove || this.submitting) return;
+
+		this.submitting = true;
+		this.actionError = undefined;
+		try {
+			const detail = await this.client.approve(this.session.user, this.id, new Date().toISOString());
+			this.state = { status: 'loaded', data: detail };
+		} catch (err) {
+			this.actionError = this.errorMessage(err);
+		} finally {
+			this.submitting = false;
+		}
 	}
 
 	async reject(): Promise<void> {
-		// TODO: require a reason, then perform the reject action through the client and reflect the
-		//       outcome in the view.
-		throw new Error('reject() not implemented');
+		if (!this.canReject || this.submitting) return;
+
+		const reason = this.rejectReason.trim();
+		if (!reason) {
+			this.actionError = 'Enter a reason before rejecting this change request.';
+			return;
+		}
+
+		this.submitting = true;
+		this.actionError = undefined;
+		try {
+			const detail = await this.client.reject(this.session.user, this.id, new Date().toISOString(), reason);
+			this.state = { status: 'loaded', data: detail };
+			this.rejectReason = '';
+		} catch (err) {
+			this.actionError = this.errorMessage(err);
+		} finally {
+			this.submitting = false;
+		}
 	}
 }

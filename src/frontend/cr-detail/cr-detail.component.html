@@ -26,6 +26,7 @@
 
 		<section class="cr-actions">
 			<p *ngIf="actionError" class="cr-actions__error" role="alert">{{ actionError }}</p>
+			<p *ngIf="submitting" class="cr-actions__loading" role="status">Updating change request…</p>
 
 			<button type="button" class="cr-actions__approve" [disabled]="!canApprove || submitting" (click)="approve()">
 				Approve
@@ -34,7 +35,12 @@
 			<div class="cr-actions__reject" *ngIf="canReject">
 				<label>
 					Reason for rejection
-					<textarea class="cr-actions__reason" (input)="onReasonInput($any($event.target).value)"></textarea>
+					<textarea
+						class="cr-actions__reason"
+						[value]="rejectReason"
+						[disabled]="submitting"
+						(input)="onReasonInput($any($event.target).value)"
+					></textarea>
 				</label>
 				<button type="button" class="cr-actions__reject-btn" [disabled]="!canReject || submitting || !rejectReason.trim()" (click)="reject()">
 					Reject

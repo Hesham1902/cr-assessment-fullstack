@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CrListComponent } from './frontend/cr-list/cr-list.component';
 import { SessionService } from './session/session.service';
-import { users } from './backend/seed';
+import { demoActors } from './integration/cr-api.types';
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -10,7 +10,7 @@ describe('integration smoke', () => {
 	it('the list page renders the change requests for the user org', async () => {
 		TestBed.configureTestingModule({
 			imports: [CrListComponent],
-			providers: [{ provide: SessionService, useValue: { user: users.mona } }],
+			providers: [{ provide: SessionService, useValue: { user: demoActors.mona } }],
 		});
 		await TestBed.compileComponents();
 		const fixture: ComponentFixture<CrListComponent> = TestBed.createComponent(CrListComponent);

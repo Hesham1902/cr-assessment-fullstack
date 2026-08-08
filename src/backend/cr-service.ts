@@ -4,6 +4,7 @@ import { CrStatus, CrAction } from './cr.enums';
 import { assertTransition } from './cr-state-machine';
 import { computeTotals } from './cr-totals';
 import { Errors } from './errors';
+import { round2 } from './money.util';
 
 /**
  * Orchestrates CR actions. `submit`, `sendForApproval`, `reject`, `returnToDraft`, `get`, and `list`
@@ -71,7 +72,9 @@ export class CrService {
 		const cr = this.getOrThrow(user, id);
 		if (!this.isApprover(user)) throw Errors.forbidden('Cannot reject');
 		if (cr.status === CrStatus.REJECTED) return cr;
-		this.transition(cr, CrStatus.REJECTED, CrAction.REJECT, user.id, at, note);
+		const reason = note?.trim();
+		if (!reason) throw Errors.validation('A rejection reason is required');
+		this.transition(cr, CrStatus.REJECTED, CrAction.REJECT, user.id, at, reason);
 		return this.repo.save(cr);
 	}
 
@@ -84,15 +87,38 @@ export class CrService {
 	}
 
 	approve(user: ReqUser, id: string, at: string): ChangeRequest {
-		// TODO: require an approve policy; legal transition PENDING_APPROVAL -> APPROVED;
-		//       record approval + audit.
-		throw Errors.validation('approve not implemented');
+		const cr = this.getOrThrow(user, id);
+		if (!this.isApprover(user)) throw Errors.forbidden('Cannot approve');
+
+		this.transition(cr, CrStatus.APPROVED, CrAction.APPROVE, user.id, at);
+		cr.approvals = [...cr.approvals, { userId: user.id, action: CrAction.APPROVE, at }];
+		return this.repo.save(cr);
 	}
 
 	apply(user: ReqUser, id: string, at: string): ChangeRequest {
-		// TODO: require an apply policy; require APPROVED; recompute totals; check budget covers a
-		//       positive delta else INSUFFICIENT_BUDGET; update budget; set APPLIED; audit.
-		throw Errors.validation('apply not implemented');
+		const cr = this.getOrThrow(user, id);
+		if (!this.isApplier(user)) throw Errors.forbidden('Cannot apply');
+		assertTransition(cr.status, CrStatus.APPLIED);
+
+		const agreement = this.agreements.get(cr.agreementId);
+		if (!agreement || agreement.orgCode !== cr.orgCode) throw Errors.notFound('Agreement not found');
+
+		const budget = this.budgets.get(agreement.budgetId);
+		if (!budget || budget.orgCode !== cr.orgCode) throw Errors.notFound('Budget not found');
+		if (budget.currency !== agreement.currency) throw Errors.validation('Agreement and budget currencies must match');
+
+		const totals = computeTotals(agreement, cr);
+		if (totals.delta > budget.balance) throw Errors.insufficientBudget();
+
+		const nextBooked = round2(budget.booked + totals.delta);
+		const nextBalance = round2(budget.balance - totals.delta);
+		if (nextBooked < 0 || nextBalance < 0) throw Errors.validation('Budget values cannot become negative');
+
+		const updatedBudget: Budget = { ...budget, booked: nextBooked, balance: nextBalance };
+		cr.totals = totals;
+		this.transition(cr, CrStatus.APPLIED, CrAction.APPLY, user.id, at);
+		this.budgets.set(updatedBudget.id, updatedBudget);
+		return this.repo.save(cr);
 	}
 
 	get(user: ReqUser, id: string): ChangeRequest {
