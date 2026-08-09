@@ -16,7 +16,7 @@ import { CrActor, CrApiError, CrDetailView, CrListItem, CrViewStatus } from './c
 @Injectable({ providedIn: 'root' })
 export class CrApiClient {
 	latencyMs = 0;
-	failNext = false;
+	failNext = true;
 	private readonly service: CrService;
 
 	constructor() {

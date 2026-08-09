@@ -19,7 +19,7 @@ async function render(
 	const client = TestBed.inject(CrApiClient);
 	configureClient?.(client);
 	const fixture = TestBed.createComponent(CrDetailComponent);
-	fixture.componentInstance.id = id;
+	fixture.componentRef.setInput('id', id);
 	fixture.detectChanges(); // ngOnInit -> load()
 	await flush();
 	fixture.detectChanges();
@@ -30,6 +30,18 @@ describe('CrDetailComponent', () => {
 	it('loads and renders the change request title', async () => {
 		const { fixture } = await render(demoActors.mona, 'CR-2'); // CR-2 is PENDING_APPROVAL
 		expect(fixture.nativeElement.querySelector('.cr-detail__header h2')).not.toBeNull();
+	});
+
+	it('reloads the detail when the selected change request changes', async () => {
+		const { fixture } = await render(demoActors.mona, 'CR-2');
+
+		fixture.componentRef.setInput('id', 'CR-APPLIED');
+		fixture.detectChanges();
+		await flush();
+		fixture.detectChanges();
+
+		expect(fixture.nativeElement.querySelector('.cr-detail__header h2').textContent).toContain('Already applied');
+		expect(fixture.nativeElement.querySelector('.cr-status').textContent).toContain('APPLIED');
 	});
 
 	it('disables Approve for a read-only viewer on a pending CR', async () => {
@@ -78,6 +90,8 @@ describe('CrDetailComponent', () => {
 	it('approves through the client and renders the updated status and timeline', async () => {
 		const { fixture } = await render(demoActors.mona, 'CR-2');
 		const approve: HTMLButtonElement = fixture.nativeElement.querySelector('.cr-actions__approve');
+		const complete = jest.fn();
+		fixture.componentInstance.actionCompleted.subscribe(complete);
 
 		approve.click();
 		fixture.detectChanges();
@@ -89,6 +103,7 @@ describe('CrDetailComponent', () => {
 		fixture.detectChanges();
 		expect(fixture.nativeElement.querySelector('.cr-status').textContent).toContain('APPROVED');
 		expect(fixture.nativeElement.querySelector('.cr-timeline__list').textContent).toContain('APPROVE');
+		expect(complete).toHaveBeenCalledTimes(1);
 	});
 
 	it('rejects with a trimmed reason and renders it in the timeline', async () => {

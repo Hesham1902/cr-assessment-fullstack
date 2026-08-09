@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CrApiClient } from '../../integration/cr-api-client';
 import { SessionService } from '../../session/session.service';
@@ -18,13 +18,15 @@ import { CrApiError } from '../../integration/cr-api.types';
 	imports: [CommonModule],
 	templateUrl: './cr-detail.component.html',
 })
-export class CrDetailComponent implements OnInit {
+export class CrDetailComponent implements OnInit, OnChanges {
 	@Input() id!: string;
+	@Output() actionCompleted = new EventEmitter<void>();
 
 	state: ViewState<CrDetailView> = idle();
 	submitting = false;
 	actionError?: string;
 	rejectReason = '';
+	private loadRequest = 0;
 
 	constructor(private readonly client: CrApiClient, private readonly session: SessionService) {}
 
@@ -32,13 +34,23 @@ export class CrDetailComponent implements OnInit {
 		void this.load();
 	}
 
+	ngOnChanges(changes: SimpleChanges): void {
+		if (changes['id'] && !changes['id'].firstChange) {
+			this.rejectReason = '';
+			void this.load();
+		}
+	}
+
 	async load(): Promise<void> {
+		const request = ++this.loadRequest;
 		this.state = loading();
 		this.actionError = undefined;
 		try {
 			const detail = await this.client.get(this.session.user, this.id);
+			if (request !== this.loadRequest) return;
 			this.state = { status: 'loaded', data: detail };
 		} catch (err) {
+			if (request !== this.loadRequest) return;
 			this.state = { status: 'error', data: null, error: this.errorMessage(err) };
 		}
 	}
@@ -72,13 +84,15 @@ export class CrDetailComponent implements OnInit {
 	async approve(): Promise<void> {
 		if (!this.canApprove || this.submitting) return;
 
+		const id = this.id;
 		this.submitting = true;
 		this.actionError = undefined;
 		try {
-			const detail = await this.client.approve(this.session.user, this.id, new Date().toISOString());
-			this.state = { status: 'loaded', data: detail };
+			const detail = await this.client.approve(this.session.user, id, new Date().toISOString());
+			if (this.id === id) this.state = { status: 'loaded', data: detail };
+			this.actionCompleted.emit();
 		} catch (err) {
-			this.actionError = this.errorMessage(err);
+			if (this.id === id) this.actionError = this.errorMessage(err);
 		} finally {
 			this.submitting = false;
 		}
@@ -93,14 +107,18 @@ export class CrDetailComponent implements OnInit {
 			return;
 		}
 
+		const id = this.id;
 		this.submitting = true;
 		this.actionError = undefined;
 		try {
-			const detail = await this.client.reject(this.session.user, this.id, new Date().toISOString(), reason);
-			this.state = { status: 'loaded', data: detail };
-			this.rejectReason = '';
+			const detail = await this.client.reject(this.session.user, id, new Date().toISOString(), reason);
+			if (this.id === id) {
+				this.state = { status: 'loaded', data: detail };
+				this.rejectReason = '';
+			}
+			this.actionCompleted.emit();
 		} catch (err) {
-			this.actionError = this.errorMessage(err);
+			if (this.id === id) this.actionError = this.errorMessage(err);
 		} finally {
 			this.submitting = false;
 		}
