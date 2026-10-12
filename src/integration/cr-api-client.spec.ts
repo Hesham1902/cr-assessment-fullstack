@@ -8,7 +8,7 @@ describe('CrApiClient boundary', () => {
 
 		const rows = await client.list(demoActors.mona);
 
-		expect(rows[0]).toEqual({ id: 'CR-1', title: 'Add 1 unit of SKU-A', status: 'DRAFT' });
+		expect(rows[0]).toEqual({ id: 'CR-1', title: 'Add 1 unit of SKU-A', status: 'DRAFT', budget: { balance: 10000, currency: 'USD' } });
 		expect(rows[0]).not.toHaveProperty('draftChanges');
 		expect(rows[0]).not.toHaveProperty('audit');
 	});
@@ -51,5 +51,13 @@ describe('CrApiClient boundary', () => {
 			code: 'NETWORK',
 			retryable: true,
 		});
+	});
+
+	it('includes the budget balance in the detail view', async () => {
+		const client = new CrApiClient();
+
+		const detail = await client.get(demoActors.mona, 'CR-2');
+
+		expect(detail.budget).toEqual({ balance: 10000, currency: 'USD' });
 	});
 });

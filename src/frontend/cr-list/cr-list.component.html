@@ -12,13 +12,17 @@
 
 	<table *ngIf="state.status === 'loaded'" class="cr-list__table">
 		<thead>
-			<tr><th>ID</th><th>Title</th><th>Status</th></tr>
+			<tr><th>ID</th><th>Title</th><th>Status</th><th>Budget left</th></tr>
 		</thead>
 		<tbody>
 			<tr *ngFor="let cr of rows" class="cr-list__row" (click)="select.emit(cr.id)">
 				<td>{{ cr.id }}</td>
 				<td>{{ cr.title }}</td>
 				<td><span class="cr-status" [attr.data-status]="cr.status">{{ cr.status }}</span></td>
+				<td class="cr-list__budget">
+					<ng-container *ngIf="cr.budget; else noBudget">{{ cr.budget.balance | number: '1.0-2' }} {{ cr.budget.currency }}</ng-container>
+					<ng-template #noBudget>-</ng-template>
+				</td>
 			</tr>
 		</tbody>
 	</table>

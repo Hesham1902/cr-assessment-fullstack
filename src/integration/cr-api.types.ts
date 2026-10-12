@@ -6,10 +6,16 @@ export interface CrActor {
 	policies: string[];
 }
 
+export interface CrBudgetView {
+	balance: number;
+	currency: string;
+}
+
 export interface CrListItem {
 	id: string;
 	title: string;
 	status: CrViewStatus;
+	budget: CrBudgetView | null;
 }
 
 export interface CrTimelineItem {

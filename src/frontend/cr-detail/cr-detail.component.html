@@ -18,8 +18,9 @@
 			<ol class="cr-timeline__list">
 				<li *ngFor="let entry of timeline" class="cr-timeline__entry">
 					<span class="cr-timeline__action">{{ entry.action }}</span>
-					<span class="cr-timeline__by">{{ entry.byUserId }}</span>
-					<span *ngIf="entry.note" class="cr-timeline__note">{{ entry.note }}</span>
+					by <span class="cr-timeline__by">{{ entry.byUserId }}</span>
+					<span class="cr-timeline__at">{{ entry.at | date: 'd MMM y, HH:mm' }}</span>
+					<span *ngIf="entry.note" class="cr-timeline__note">Reason: {{ entry.note }}</span>
 				</li>
 			</ol>
 		</section>
