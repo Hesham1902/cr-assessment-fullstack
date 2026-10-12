@@ -16,7 +16,7 @@ import { CrActor, CrApiError, CrDetailView, CrListItem, CrViewStatus } from './c
 @Injectable({ providedIn: 'root' })
 export class CrApiClient {
 	latencyMs = 0;
-	failNext = true;
+	failNext = false;
 	private readonly service: CrService;
 
 	constructor() {
@@ -47,13 +47,19 @@ export class CrApiClient {
 		return { id: actor.id, orgCode: actor.orgCode, policies: [...actor.policies] };
 	}
 
-	private toListItem(cr: ChangeRequest): CrListItem {
-		return { id: cr.id, title: cr.title, status: cr.status as CrViewStatus };
+	private toListItem(cr: ChangeRequest, user: ReqUser): CrListItem {
+		const budget = this.service.budgetOf(user, cr);
+		return {
+			id: cr.id,
+			title: cr.title,
+			status: cr.status as CrViewStatus,
+			budget: budget ? { balance: budget.balance, currency: budget.currency } : null,
+		};
 	}
 
-	private toDetail(cr: ChangeRequest): CrDetailView {
+	private toDetail(cr: ChangeRequest, user: ReqUser): CrDetailView {
 		return {
-			...this.toListItem(cr),
+			...this.toListItem(cr, user),
 			totals: { ...cr.totals },
 			timeline: cr.audit.map((entry) => ({ ...entry })),
 		};
@@ -78,18 +84,30 @@ export class CrApiClient {
 	}
 
 	list(actor: CrActor): Promise<CrListItem[]> {
-		return this.settle(() => this.service.list(this.toReqUser(actor)).map((cr) => this.toListItem(cr)));
+		return this.settle(() => {
+			const user = this.toReqUser(actor);
+			return this.service.list(user).map((cr) => this.toListItem(cr, user));
+		});
 	}
 
 	get(actor: CrActor, id: string): Promise<CrDetailView> {
-		return this.settle(() => this.toDetail(this.service.get(this.toReqUser(actor), id)));
+		return this.settle(() => {
+			const user = this.toReqUser(actor);
+			return this.toDetail(this.service.get(user, id), user);
+		});
 	}
 
 	approve(actor: CrActor, id: string, at: string): Promise<CrDetailView> {
-		return this.settle(() => this.toDetail(this.service.approve(this.toReqUser(actor), id, at)));
+		return this.settle(() => {
+			const user = this.toReqUser(actor);
+			return this.toDetail(this.service.approve(user, id, at), user);
+		});
 	}
 
 	reject(actor: CrActor, id: string, at: string, note: string): Promise<CrDetailView> {
-		return this.settle(() => this.toDetail(this.service.reject(this.toReqUser(actor), id, at, note)));
+		return this.settle(() => {
+			const user = this.toReqUser(actor);
+			return this.toDetail(this.service.reject(user, id, at, note), user);
+		});
 	}
 }

@@ -15,7 +15,7 @@ body {
 }
 .app-layout {
 	display: grid;
-	grid-template-columns: 360px 1fr;
+	grid-template-columns: 480px 1fr;
 	gap: 1.5rem;
 	padding: 1.25rem;
 	align-items: start;
@@ -54,4 +54,23 @@ button:disabled {
 }
 .cr-diff__row[data-kind='removed'] {
 	background: #fdecea;
+}
+
+.cr-list__budget {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+.cr-timeline__entry {
+	margin-bottom: 0.35rem;
+}
+.cr-timeline__action {
+	font-weight: 600;
+}
+.cr-timeline__at {
+	color: #666;
+	margin-left: 0.4rem;
+}
+.cr-timeline__note {
+	display: block;
+	color: #444;
 }

@@ -121,6 +121,14 @@ export class CrService {
 		return this.repo.save(cr);
 	}
 
+	/** The budget this CR's agreement draws from, or undefined when it is not in the caller's org. */
+	budgetOf(user: ReqUser, cr: ChangeRequest): Budget | undefined {
+		const agreement = this.agreements.get(cr.agreementId);
+		if (!agreement || agreement.orgCode !== user.orgCode) return undefined;
+		const budget = this.budgets.get(agreement.budgetId);
+		return budget && budget.orgCode === user.orgCode ? budget : undefined;
+	}
+
 	get(user: ReqUser, id: string): ChangeRequest {
 		return this.getOrThrow(user, id);
 	}
